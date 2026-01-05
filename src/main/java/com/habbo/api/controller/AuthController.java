@@ -1,0 +1,47 @@
+package com.habbo.api.controller;
+
+import com.habbo.api.dto.LoginRequest;
+import com.habbo.api.model.User;
+import com.habbo.api.repository.UserRepository;
+import com.habbo.api.security.JwtUtil;
+import jakarta.validation.Valid;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.Map;
+
+@RestController
+@RequestMapping("/auth")
+public class AuthController {
+
+    private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
+
+    public AuthController(UserRepository userRepository,
+                          PasswordEncoder passwordEncoder) {
+        this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
+    }
+
+    @PostMapping("/login")
+    public Map<String, String> login(@RequestBody LoginRequest request) {
+
+        User user = userRepository.findByUsername(request.getUsername())
+                .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+
+        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+            throw new RuntimeException("Senha inválida");
+        }
+
+        String token = JwtUtil.generateToken(
+                user.getUsername(),
+                user.getRole().name()
+        );
+
+        return Map.of(
+                "token", token,
+                "role", user.getRole().name(),
+                "username", user.getUsername()
+        );
+    }
+}
