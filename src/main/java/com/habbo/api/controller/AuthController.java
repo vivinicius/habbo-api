@@ -7,6 +7,12 @@ import com.habbo.api.security.JwtUtil;
 import jakarta.validation.Valid;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
+import com.habbo.api.dto.RegisterAdminRequest;
+import com.habbo.api.model.Role;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.RequestHeader;
+
 
 import java.util.Map;
 
@@ -44,4 +50,33 @@ public class AuthController {
                 "username", user.getUsername()
         );
     }
+
+    @PostMapping("/admin/register")
+    public ResponseEntity<?> registerAdmin(
+            @RequestHeader("X-ADMIN-CODE") String adminCode,
+            @RequestBody RegisterAdminRequest request
+    ) {
+
+        String envAdminCode = System.getenv("ADMIN_CODE");
+
+        if (envAdminCode == null || !envAdminCode.equals(adminCode)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body("Código de administrador inválido");
+        }
+
+        if (userRepository.existsByUsername(request.getUsername())) {
+            return ResponseEntity.badRequest()
+                    .body("Usuário já existe");
+        }
+
+        User user = new User();
+        user.setUsername(request.getUsername());
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
+        user.setRole(Role.ADMIN);
+
+        userRepository.save(user);
+
+        return ResponseEntity.ok("Administrador criado com sucesso");
+    }
+
 }
