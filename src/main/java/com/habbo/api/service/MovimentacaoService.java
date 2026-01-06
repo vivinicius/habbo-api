@@ -80,7 +80,11 @@ public class MovimentacaoService {
                 .mapToInt(Movimentacao::getValor)
                 .sum();
 
-        int total = totalPago + totalPagues;
+        int total = totalPago;
+
+        System.out.println("Total Pago: "+totalPago);
+        System.out.println("Total Pagues: "+totalPagues);
+        System.out.println("Total: "+total);
 
         jogo.setTotalSemValorPremio(total);
 
